@@ -65,7 +65,7 @@ public:
 			Fall = 11,
 			Swim = 12, 
 			Run = 13, 
-			ipe = 14, 
+			Pipe = 14, 
 			Door = 15
 		};
 
@@ -79,8 +79,6 @@ public:
 public:
 	MapData(u8* data);
 
-	// fixRef is used to fix the pointers in the map data
-	// this is because the map data is serialized and the pointers are not valid
 	template <typename T>
 	T* fixRef(T*& indexAsPtr) {
 		u32 index = (u32)indexAsPtr;
@@ -107,7 +105,7 @@ using std::string;
 
 class Map {
 public:
-	Map(const Map&) = default;
+	Map(const Map&) = delete;
 
 	static Map& GetInstance() {
 		return instance;
