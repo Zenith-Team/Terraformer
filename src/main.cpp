@@ -9,35 +9,92 @@
 
 #include "Map.h"
 
-bool* p_open = new bool(true);
+void showMessage(std::string message) {
+	ImGui::OpenPopup("Message");
+
+	if (ImGui::BeginPopupModal("Message", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		ImGui::Text(message.c_str());
+		if (ImGui::Button("OK")) {
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
+
+bool w_open = true;
+Map* mapFile = nullptr;
+
+bool show_help = true;
+bool show_mapProperties = true;
+
+void showMapUI(Map* file) {
+	ImGui::Text(file->map.worldInfo.name);
+
+	for (u32 i = 0; i < file->map.nodeCount; i++) {
+		MapData::Node* node = file->map.nodes[i];
+
+		static const char* const typeStrings[] = {
+			"Stop",
+			"Passthrough",
+			"Level"
+		};
+
+		ImGui::Text("Node %i: \"%s\" [%s]", i, node->boneName, typeStrings[node->type]);
+	}
+}
 
 void update() {
-	if (!p_open) {
-		
+	if (!w_open) {
+		glfwSetWindowShouldClose(glfwGetCurrentContext(), true);
 	}
 
-	if (ImGui::Begin("Terraformer", p_open, ImGuiWindowFlags_MenuBar)) {
+	if (ImGui::Begin("Terraformer", &w_open, ImGuiWindowFlags_MenuBar)) {
 		if (ImGui::BeginMenuBar()) {
 			if (ImGui::BeginMenu("File")) {
-				if (ImGui::MenuItem("Open", "Ctrl+O")) {
-					Map::Load("CS_W1.a2ls");
+				if (ImGui::MenuItem("New")) {
+
 				}
-				if (ImGui::MenuItem("Save", "Ctrl+S")) {
+				if (ImGui::MenuItem("Open")) {
+					if (mapFile != nullptr) {
+						// do like a unsaved changes thing
+						delete mapFile;
+					}
+					try {
+						mapFile = Map::Load("CS_W4.a2ls");
+					}
+					catch (std::runtime_error& e) {
+						showMessage(e.what());
+					}
+					
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Save")) {
 				
 				}
 				if (ImGui::MenuItem("Save As..")) {
 				
 				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Close file"), "", false, false) {
+					// do like a unsaved changes thing
+					mapFile = nullptr;
+				}
+
 				ImGui::EndMenu();
 			}
 			ImGui::EndMenuBar();
 		}
 		// end menu bar
 
-
-
-		ImGui::Text("Hello, world!");
+		if (mapFile != nullptr) {
+			showMapUI(mapFile);
+		} else {
+			ImGui::Text("No map loaded");
+		}
 	} ImGui::End();
+
+	ImGui::ShowDemoWindow();
+
 }
 
 void SetupImGuiStyle() {

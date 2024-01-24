@@ -91,6 +91,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="vendor\lib\glfw3.lib" />
+    <Library Include="vendor\lib\glfw3_mt.lib" />
   </ItemGroup>
 </Project>

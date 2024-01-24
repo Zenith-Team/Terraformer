@@ -100,28 +100,31 @@ public:
 	Path** paths;
 };
 
-
-using std::string;
-
 class Map {
 public:
-	Map(const Map&) = delete;
+	Map(u8* data)
+		: map(data)
+	{ }
 
-	static Map& GetInstance() {
-		return instance;
-	}
-
-private:
-	Map() = default;
-
-	static Map instance;
-
-public:
 	MapData map;
-	bool mapLoaded;
 
-	static void Load(string filePath);
-	static void Unload();
-	static void Save();
-	static void SaveAs();
+	static Map* Load(std::string filePath);
+};
+
+
+class DataBE {
+public:
+	template <typename T>
+	static T swapEndian(T& value) {
+		u8* data = (u8*)&value;
+		u8 temp;
+
+		for (u32 i = 0; i < sizeof(T) / 2; i++) {
+			temp = data[i];
+			data[i] = data[sizeof(T) - i - 1];
+			data[sizeof(T) - i - 1] = temp;
+		}
+
+		return value;
+	}
 };
