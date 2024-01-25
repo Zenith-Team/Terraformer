@@ -1,9 +1,12 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include <cstdint>
 
-using u32 = unsigned int;
-using u8 = unsigned char;
+using u64 = std::uint64_t;
+using u32 = std::uint32_t;
+using u8 = std::uint8_t;
 using f32 = float;
 
 // https://github.com/Zenith-Team/smevo/blob/main/include/sme/carterra/map.h#L8
@@ -77,46 +80,60 @@ public:
 	};
 
 public:
-	MapData(u8* data);
+	explicit MapData(u8* data);
 
 	template <typename T>
-	T* fixRef(T*& indexAsPtr) {
-		u32 index = (u32)indexAsPtr;
+	void fixRef(T*& indexAsPtr) {
+		u64 index = reinterpret_cast<std::uintptr_t>(indexAsPtr);
 		if (index == 0xFFFFFFFF || index == 0) {
 			indexAsPtr = 0;
-		}
-		else {
+		} else {
 			indexAsPtr = (T*)(((u8*)this) + index);
 		}
+	}
 
-		return indexAsPtr;
+	template <typename T>
+	T fixRefPtrConv(u32 index) {
+		u64 ptr = 0;
+		ptr += index;
+		if (index == 0xFFFFFFFF || index == 0) {
+			ptr = 0;
+		} else {
+			//ptr = reinterpret_cast<T>(reinterpret_cast<std::uintptr_t>(this) + index);
+			ptr += reinterpret_cast<std::uintptr_t>(this);
+		}
+
+		return reinterpret_cast<T>(ptr);
 	}
 	
 	Header header;
 	WorldInfo worldInfo;
 	u32 nodeCount;
-	Node** nodes;
+	u32 nodes;
 	u32 pathCount;
-	Path** paths;
+	u32 paths;
+
+	Node** nodesPtr;
+	Path** pathsPtr;
 };
 
 class Map {
 public:
-	Map(u8* data)
-		: map(data)
-	{ }
+	Map(const std::string& filePath);
 
-	MapData map;
-
-	static Map* Load(std::string filePath);
+	MapData::Header header;
+	MapData::WorldInfo worldInfo;
+	std::vector<MapData::Node> nodes;
+	std::vector<MapData::Path> paths;
 };
 
 
 class DataBE {
 public:
 	template <typename T>
-	static T swapEndian(T& value) {
-		u8* data = (u8*)&value;
+	[[nodiscard]] static T swapEndian(const T value) {
+		const T newValue = value;
+		u8* data = (u8*)&newValue;
 		u8 temp;
 
 		for (u32 i = 0; i < sizeof(T) / 2; i++) {
@@ -125,6 +142,6 @@ public:
 			data[sizeof(T) - i - 1] = temp;
 		}
 
-		return value;
+		return newValue;
 	}
 };

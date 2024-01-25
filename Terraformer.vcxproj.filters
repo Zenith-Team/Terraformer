@@ -42,7 +42,7 @@
     <ClCompile Include="vendor\src\glad\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Map.cpp">
+    <ClCompile Include="src\map.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -89,8 +89,11 @@
     <ClInclude Include="src\Map.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="vendor\lib\glfw3_mt.lib" />
+    <Library Include="vendor\lib\glfw3.lib" />
   </ItemGroup>
 </Project>

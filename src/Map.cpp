@@ -1,9 +1,9 @@
-#include "Map.h"
 #include <string>
 #include <fstream>
 #include <iostream>
+#include "map.h"
 
-Map* Map::Load(std::string filePath) {
+Map::Map(const std::string& filePath) {
 	std::string buffer;
 
 	std::ifstream file(filePath, std::ios::binary);
@@ -19,7 +19,18 @@ Map* Map::Load(std::string filePath) {
 
 	u8* data = (u8*)buffer.data();
 
-	return new Map(data);
+	MapData dataStruct{data};
+
+	this->header = dataStruct.header;
+	this->worldInfo = dataStruct.worldInfo;
+
+	for (u32 i = 0; i < dataStruct.nodeCount; i++) {
+		this->nodes.push_back(*dataStruct.nodesPtr[i]);
+	}
+
+	for (u32 i = 0; i < dataStruct.pathCount; i++) {
+		this->paths.push_back(*dataStruct.pathsPtr[i]);
+	}
 }
 
 static void findUnlockCriteriaSize(u8* unlockCriteria, u32& idx) {
@@ -45,95 +56,88 @@ static void findUnlockCriteriaSize(u8* unlockCriteria, u32& idx) {
 
 MapData::MapData(u8* data) {
 	this->nodeCount = 0;
-	this->nodes = nullptr;
+	this->nodesPtr = nullptr;
 	this->pathCount = 0;
-	this->paths = nullptr;
+	this->pathsPtr = nullptr;
 
 	MapData* xdata = reinterpret_cast<MapData*>(data);
 
-	this->header.magic = xdata->header.magic;
-	DataBE::swapEndian(this->header.magic);
-	this->header.version = xdata->header.version;
-	DataBE::swapEndian(this->header.version);
-	this->header.mapID = xdata->header.mapID;
-	DataBE::swapEndian(this->header.mapID);
+	this->header.magic = DataBE::swapEndian(xdata->header.magic);
+	this->header.version = DataBE::swapEndian(xdata->header.version);
+	this->header.mapID = DataBE::swapEndian(xdata->header.mapID);
 
 	if (this->header.magic != MapData::MAGIC) throw std::runtime_error("Invalid magic");
 	if (this->header.version != MapData::VERSION) throw std::runtime_error("Invalid version");
 
-	this->worldInfo.worldID = xdata->worldInfo.worldID;
-	DataBE::swapEndian(this->worldInfo.worldID);
+	this->worldInfo.worldID = DataBE::swapEndian(xdata->worldInfo.worldID);
 	memcpy(this->worldInfo.name, xdata->worldInfo.name, 32);
+	this->worldInfo.accentColor = DataBE::swapEndian(xdata->worldInfo.accentColor);
 
-	this->worldInfo.accentColor = xdata->worldInfo.accentColor;
-	DataBE::swapEndian(this->worldInfo.accentColor);
+	this->nodeCount = DataBE::swapEndian(xdata->nodeCount);
+	this->pathCount = DataBE::swapEndian(xdata->pathCount);
 
-	this->nodeCount = xdata->nodeCount;
-	DataBE::swapEndian(this->nodeCount);
-	this->pathCount = xdata->pathCount;
-	DataBE::swapEndian(this->pathCount);
+	Node** xdataNodesPtr = xdata->fixRefPtrConv<Node**>(DataBE::swapEndian(xdata->nodes));
+	Path** xdataPathsPtr = xdata->fixRefPtrConv<Path**>(DataBE::swapEndian(xdata->paths));
 
-	DataBE::swapEndian(xdata->nodes);
-	xdata->fixRef(xdata->nodes);
-	DataBE::swapEndian(xdata->paths);
-	xdata->fixRef(xdata->paths);
-
-	this->nodes = new Node* [this->nodeCount];
+	this->nodesPtr = new Node* [this->nodeCount];
 	for (u32 i = 0; i < this->nodeCount; i++) {
-		DataBE::swapEndian(xdata->nodes[i]);
-		xdata->fixRef<MapData::Node>(xdata->nodes[i]);
+		DataBE::swapEndian(xdataNodesPtr[i]);
+		xdata->fixRef<MapData::Node>(xdataNodesPtr[i]);
 
-		this->nodes[i] = new Node();
-		this->nodes[i]->type = xdata->nodes[i]->type;
-		DataBE::swapEndian(this->nodes[i]->type);
-		memcpy(&this->nodes[i]->boneName, &xdata->nodes[i]->boneName, 32);
+		this->nodesPtr[i] = new Node();
 
-		if (this->nodes[i]->type == MapData::Node::Type::Level) {
-			this->nodes[i]->level.levelID = xdata->nodes[i]->level.levelID;
-			DataBE::swapEndian(this->nodes[i]->level.levelID);
-			this->nodes[i]->level.unlocksMapID = xdata->nodes[i]->level.unlocksMapID;
-			DataBE::swapEndian(this->nodes[i]->level.unlocksMapID);
+		Node* n = this->nodesPtr[i];
+		Node* o = xdataNodesPtr[i];
+		n->type = DataBE::swapEndian(o->type);
+
+		memcpy(&this->nodesPtr[i]->boneName, &xdataNodesPtr[i]->boneName, 32);
+
+		if (this->nodesPtr[i]->type == MapData::Node::Type::Level) {
+			this->nodesPtr[i]->level.levelID = DataBE::swapEndian(xdataNodesPtr[i]->level.levelID);
+			this->nodesPtr[i]->level.unlocksMapID = DataBE::swapEndian(xdataNodesPtr[i]->level.unlocksMapID);
 		}
+
+		std::cout << "Node " << i << ":" << std::endl;
+		std::cout << "    Type: " << this->nodesPtr[i]->type << std::endl;
+		std::cout << "    BoneName: " << this->nodesPtr[i]->boneName << std::endl << std::endl;
 	}
 
-	this->paths = new Path* [this->pathCount];
+	this->pathsPtr = new Path* [this->pathCount];
 	for (u32 i = 0; i < this->pathCount; i++) {
-		DataBE::swapEndian(xdata->paths[i]);
-		xdata->fixRef(xdata->paths[i]);
+		auto a = DataBE::swapEndian(xdataPathsPtr[i]);
+		xdata->fixRef(a);
+		xdataPathsPtr[i] = a;
 
-		this->paths[i] = new Path();
-		xdata->fixRef(xdata->paths[i]->startingNode);
-		xdata->fixRef(xdata->paths[i]->endingNode);
+		this->pathsPtr[i] = new Path();
+		xdata->fixRef(xdataPathsPtr[i]->startingNode);
+		xdata->fixRef(xdataPathsPtr[i]->endingNode);
 
-		this->paths[i]->startingNode = nullptr;
+		this->pathsPtr[i]->startingNode = nullptr;
 		for (u32 j = 0; j < this->nodeCount; j++) {
-			if (xdata->paths[i]->startingNode == xdata->nodes[j]) {
-				this->paths[i]->startingNode = this->nodes[j];
-				DataBE::swapEndian(this->paths[i]->startingNode);
+			if (xdataPathsPtr[i]->startingNode == xdataNodesPtr[j]) {
+				this->pathsPtr[i]->startingNode = DataBE::swapEndian(this->nodesPtr[j]);
 			}
 		}
 
-		this->paths[i]->endingNode = nullptr;
+		this->pathsPtr[i]->endingNode = nullptr;
 		for (u32 j = 0; j < this->nodeCount; j++) {
-			if (xdata->paths[i]->endingNode == xdata->nodes[j]) {
-				this->paths[i]->endingNode = this->nodes[j];
-				DataBE::swapEndian(this->paths[i]->endingNode);
+			if (xdataPathsPtr[i]->endingNode == xdataNodesPtr[j]) {
+				this->pathsPtr[i]->endingNode = DataBE::swapEndian(this->nodesPtr[j]);
 			}
 		}
 
-		this->paths[i]->speed = xdata->paths[i]->speed;
-		DataBE::swapEndian(this->paths[i]->speed);
-		this->paths[i]->animation = xdata->paths[i]->animation;
-		DataBE::swapEndian(this->paths[i]->animation);
+		this->pathsPtr[i]->speed = DataBE::swapEndian(xdataPathsPtr[i]->speed);
+		this->pathsPtr[i]->animation = DataBE::swapEndian(xdataPathsPtr[i]->animation);
 
-		DataBE::swapEndian(xdata->paths[i]->unlockCriteria);
-		xdata->fixRef(xdata->paths[i]->unlockCriteria);
+		auto b = DataBE::swapEndian(xdataPathsPtr[i]->unlockCriteria);
+		xdata->fixRef(b);
+		xdataPathsPtr[i]->unlockCriteria = b;
 
 		u32 ucSize = 0;
-		u8* unlockCriteria = xdata->paths[i]->unlockCriteria;
+		u8* unlockCriteria = xdataPathsPtr[i]->unlockCriteria;
 		findUnlockCriteriaSize(unlockCriteria, ucSize);
 
-		this->paths[i]->unlockCriteria = new u8[ucSize];
-		memcpy(this->paths[i]->unlockCriteria, unlockCriteria, ucSize);
+		this->pathsPtr[i]->unlockCriteria = new u8[ucSize];
+		memcpy(this->pathsPtr[i]->unlockCriteria, unlockCriteria, ucSize);
 	}
 }

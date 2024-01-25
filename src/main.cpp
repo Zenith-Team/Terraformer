@@ -7,19 +7,9 @@
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
 
-#include "Map.h"
+#include "map.h"
 
-void showMessage(std::string message) {
-	ImGui::OpenPopup("Message");
-
-	if (ImGui::BeginPopupModal("Message", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-		ImGui::Text(message.c_str());
-		if (ImGui::Button("OK")) {
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::EndPopup();
-	}
-}
+std::string* message = nullptr;
 
 bool w_open = true;
 Map* mapFile = nullptr;
@@ -28,22 +18,39 @@ bool show_help = true;
 bool show_mapProperties = true;
 
 void showMapUI(Map* file) {
-	ImGui::Text(file->map.worldInfo.name);
+	ImGui::Text(file->worldInfo.name);
 
-	for (u32 i = 0; i < file->map.nodeCount; i++) {
-		MapData::Node* node = file->map.nodes[i];
-
+	u32 i = 0;
+	for (const MapData::Node& node : file->nodes) {		
 		static const char* const typeStrings[] = {
 			"Stop",
 			"Passthrough",
 			"Level"
 		};
 
-		ImGui::Text("Node %i: \"%s\" [%s]", i, node->boneName, typeStrings[node->type]);
+		ImGui::Text("Node %i: \"%s\" [%s]", i, node.boneName, typeStrings[node.type]);
+		i++;
 	}
 }
 
 void update() {
+	if (message != nullptr) {
+		ImGui::OpenPopup("Message");
+
+		if (ImGui::BeginPopupModal("Message", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+			ImGui::Text(message->c_str());
+
+			if (ImGui::Button("OK")) {
+				ImGui::CloseCurrentPopup();
+				std::cout << message->c_str() << std::endl;
+				delete message;
+				message = nullptr;
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+
 	if (!w_open) {
 		glfwSetWindowShouldClose(glfwGetCurrentContext(), true);
 	}
@@ -58,38 +65,42 @@ void update() {
 					if (mapFile != nullptr) {
 						// do like a unsaved changes thing
 						delete mapFile;
+						mapFile = nullptr;
 					}
 					try {
-						mapFile = Map::Load("CS_W4.a2ls");
+						mapFile = new Map("CS_W1.a2ls");
 					}
 					catch (std::runtime_error& e) {
-						showMessage(e.what());
+						message = new std::string(e.what());
 					}
 					
 				}
+
 				ImGui::Separator();
+
 				if (ImGui::MenuItem("Save")) {
-				
+					
 				}
 				if (ImGui::MenuItem("Save As..")) {
 				
 				}
+
 				ImGui::Separator();
-				if (ImGui::MenuItem("Close file"), "", false, false) {
-					// do like a unsaved changes thing
+
+				if (ImGui::MenuItem("Close", nullptr, nullptr, (mapFile != nullptr))) {
+					delete mapFile;
 					mapFile = nullptr;
 				}
 
 				ImGui::EndMenu();
-			}
-			ImGui::EndMenuBar();
-		}
-		// end menu bar
+			} 
+			
+		} ImGui::EndMenuBar();
 
 		if (mapFile != nullptr) {
 			showMapUI(mapFile);
 		} else {
-			ImGui::Text("No map loaded");
+			ImGui::Text("No map loaded (File -> New | Open)");
 		}
 	} ImGui::End();
 
@@ -194,7 +205,7 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-	//glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+	
 	GLFWwindow* window = glfwCreateWindow(1920, 1080, "Window", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 	gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
