@@ -19,7 +19,11 @@ bool show_mapProperties = true;
 
 void showMapUI(Map* file) {
 	ImGui::Text(file->worldInfo.name);
+	ImGui::Text("Map ID: %i", file->header.mapID); ImGui::SameLine();
+	ImGui::Text("World ID: %i", file->worldInfo.worldID);
+	ImGui::Text("Accent Color: %08X", file->worldInfo.accentColor);
 
+	ImGui::SeparatorText("Nodes");
 	u32 i = 0;
 	for (const MapData::Node& node : file->nodes) {		
 		static const char* const typeStrings[] = {
@@ -29,6 +33,13 @@ void showMapUI(Map* file) {
 		};
 
 		ImGui::Text("Node %i: \"%s\" [%s]", i, node.boneName, typeStrings[node.type]);
+		i++;
+	}
+
+	ImGui::SeparatorText("Paths");
+	i = 0;
+	for (const MapData::Path& path : file->paths) {
+		ImGui::Text("Path %i [%d->%d]", i, path.startingNodeIndex, path.endingNodeIndex);
 		i++;
 	}
 }
@@ -103,9 +114,6 @@ void update() {
 			ImGui::Text("No map loaded (File -> New | Open)");
 		}
 	} ImGui::End();
-
-	ImGui::ShowDemoWindow();
-
 }
 
 void SetupImGuiStyle() {

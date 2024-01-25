@@ -9,6 +9,25 @@ using u32 = std::uint32_t;
 using u8 = std::uint8_t;
 using f32 = float;
 
+inline void* AddOffset(const void* ptr, intptr_t offset) {
+	return reinterpret_cast<void*>(uintptr_t(ptr) + offset);
+}
+
+template <typename T>
+[[nodiscard]] T SwapEndian(const T value) {
+	const T newValue = value;
+	u8* data = (u8*)&newValue;
+	u8 temp;
+
+	for (u32 i = 0; i < sizeof(T) / 2; i++) {
+		temp = data[i];
+		data[i] = data[sizeof(T) - i - 1];
+		data[sizeof(T) - i - 1] = temp;
+	}
+
+	return newValue;
+}
+
 // https://github.com/Zenith-Team/smevo/blob/main/include/sme/carterra/map.h#L8
 class MapData {
 public:
@@ -38,9 +57,7 @@ public:
 		};
 
 		Type type;
-
 		char boneName[32];
-
 		union {
 			struct {
 
@@ -53,7 +70,7 @@ public:
 	};
 
 	struct Path {
-		enum Animation {
+		enum Animation : u32 {
 			Walk = 0,
 			WalkSand = 1, 
 			WalkSnow = 2, 
@@ -72,15 +89,18 @@ public:
 			Door = 15
 		};
 
-		Node* startingNode;
-		Node* endingNode;
+		u32 startingNodeIndex;
+		u32 endingNodeIndex;
 		f32 speed;
 		Animation animation;
-		u8* unlockCriteria;
+		u32 unlockCriteriaOffs;
+
+		u8* unlockCriteriaData;
 	};
 
 public:
 	explicit MapData(u8* data);
+	~MapData();
 
 	template <typename T>
 	void fixRef(T*& indexAsPtr) {
@@ -91,57 +111,25 @@ public:
 			indexAsPtr = (T*)(((u8*)this) + index);
 		}
 	}
-
-	template <typename T>
-	T fixRefPtrConv(u32 index) {
-		u64 ptr = 0;
-		ptr += index;
-		if (index == 0xFFFFFFFF || index == 0) {
-			ptr = 0;
-		} else {
-			//ptr = reinterpret_cast<T>(reinterpret_cast<std::uintptr_t>(this) + index);
-			ptr += reinterpret_cast<std::uintptr_t>(this);
-		}
-
-		return reinterpret_cast<T>(ptr);
-	}
 	
 	Header header;
 	WorldInfo worldInfo;
 	u32 nodeCount;
-	u32 nodes;
+	u32 nodes; // Node**
 	u32 pathCount;
-	u32 paths;
+	u32 paths; // Path**
 
-	Node** nodesPtr;
-	Path** pathsPtr;
+	Node* nodesPtr;
+	Path* pathsPtr;
 };
 
 class Map {
 public:
 	Map(const std::string& filePath);
+	~Map();
 
 	MapData::Header header;
 	MapData::WorldInfo worldInfo;
 	std::vector<MapData::Node> nodes;
 	std::vector<MapData::Path> paths;
-};
-
-
-class DataBE {
-public:
-	template <typename T>
-	[[nodiscard]] static T swapEndian(const T value) {
-		const T newValue = value;
-		u8* data = (u8*)&newValue;
-		u8 temp;
-
-		for (u32 i = 0; i < sizeof(T) / 2; i++) {
-			temp = data[i];
-			data[i] = data[sizeof(T) - i - 1];
-			data[sizeof(T) - i - 1] = temp;
-		}
-
-		return newValue;
-	}
 };
