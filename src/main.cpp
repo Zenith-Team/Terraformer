@@ -7,113 +7,11 @@
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
 
-#include "map.h"
-
-std::string* message = nullptr;
-
-bool w_open = true;
-Map* mapFile = nullptr;
-
-bool show_help = true;
-bool show_mapProperties = true;
-
-void showMapUI(Map* file) {
-	ImGui::Text(file->worldInfo.name);
-	ImGui::Text("Map ID: %i", file->header.mapID); ImGui::SameLine();
-	ImGui::Text("World ID: %i", file->worldInfo.worldID);
-	ImGui::Text("Accent Color: %08X", file->worldInfo.accentColor);
-
-	ImGui::SeparatorText("Nodes");
-	u32 i = 0;
-	for (const MapData::Node& node : file->nodes) {		
-		static const char* const typeStrings[] = {
-			"Stop",
-			"Passthrough",
-			"Level"
-		};
-
-		ImGui::Text("Node %i: \"%s\" [%s]", i, node.boneName, typeStrings[node.type]);
-		i++;
-	}
-
-	ImGui::SeparatorText("Paths");
-	i = 0;
-	for (const MapData::Path& path : file->paths) {
-		ImGui::Text("Path %i [%d->%d]", i, path.startingNodeIndex, path.endingNodeIndex);
-		i++;
-	}
-}
+#include "terraformer.h"
 
 void update() {
-	if (message != nullptr) {
-		ImGui::OpenPopup("Message");
-
-		if (ImGui::BeginPopupModal("Message", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
-			ImGui::Text(message->c_str());
-
-			if (ImGui::Button("OK")) {
-				ImGui::CloseCurrentPopup();
-				std::cout << message->c_str() << std::endl;
-				delete message;
-				message = nullptr;
-			}
-
-			ImGui::EndPopup();
-		}
-	}
-
-	if (!w_open) {
-		glfwSetWindowShouldClose(glfwGetCurrentContext(), true);
-	}
-
-	if (ImGui::Begin("Terraformer", &w_open, ImGuiWindowFlags_MenuBar)) {
-		if (ImGui::BeginMenuBar()) {
-			if (ImGui::BeginMenu("File")) {
-				if (ImGui::MenuItem("New")) {
-
-				}
-				if (ImGui::MenuItem("Open")) {
-					if (mapFile != nullptr) {
-						// do like a unsaved changes thing
-						delete mapFile;
-						mapFile = nullptr;
-					}
-					try {
-						mapFile = new Map("CS_W1.a2ls");
-					}
-					catch (std::runtime_error& e) {
-						message = new std::string(e.what());
-					}
-					
-				}
-
-				ImGui::Separator();
-
-				if (ImGui::MenuItem("Save")) {
-					
-				}
-				if (ImGui::MenuItem("Save As..")) {
-				
-				}
-
-				ImGui::Separator();
-
-				if (ImGui::MenuItem("Close", nullptr, nullptr, (mapFile != nullptr))) {
-					delete mapFile;
-					mapFile = nullptr;
-				}
-
-				ImGui::EndMenu();
-			} 
-			
-		} ImGui::EndMenuBar();
-
-		if (mapFile != nullptr) {
-			showMapUI(mapFile);
-		} else {
-			ImGui::Text("No map loaded (File -> New | Open)");
-		}
-	} ImGui::End();
+    static Terraformer app;
+	app.Update();
 }
 
 void SetupImGuiStyle() {

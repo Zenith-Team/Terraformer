@@ -158,6 +158,7 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\map.cpp" />
+    <ClCompile Include="src\terraformer.cpp" />
     <ClCompile Include="vendor\src\glad\glad.c" />
     <ClCompile Include="vendor\src\imgui\imgui.cpp" />
     <ClCompile Include="vendor\src\imgui\imgui_demo.cpp" />
