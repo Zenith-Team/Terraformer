@@ -4,9 +4,10 @@
 #include <vector>
 #include <cstdint>
 
-using u64 = std::uint64_t;
-using u32 = std::uint32_t;
 using u8 = std::uint8_t;
+using u32 = std::uint32_t;
+using s32 = std::int32_t;
+using u64 = std::uint64_t;
 using f32 = float;
 
 inline void* AddOffset(const void* ptr, intptr_t offset) {
@@ -15,7 +16,7 @@ inline void* AddOffset(const void* ptr, intptr_t offset) {
 
 template <typename T>
 [[nodiscard]] T SwapEndian(const T value) {
-	const T newValue = value;
+	T newValue = value;
 	u8* data = (u8*)&newValue;
 	u8 temp;
 
@@ -64,7 +65,7 @@ public:
 			} normal, passthrough;
 			struct {
 				u32 levelID;
-				u32 unlocksMapID;
+				s32 unlocksMapID;
 			} level;
 		};
 	};
@@ -95,32 +96,12 @@ public:
 		Animation animation;
 		u32 unlockCriteriaOffs;
 
+		// extra
 		u8* unlockCriteriaData;
 	};
 
-public:
-	explicit MapData(u8* data);
-	~MapData();
-
-	template <typename T>
-	void fixRef(T*& indexAsPtr) {
-		u64 index = reinterpret_cast<std::uintptr_t>(indexAsPtr);
-		if (index == 0xFFFFFFFF || index == 0) {
-			indexAsPtr = 0;
-		} else {
-			indexAsPtr = (T*)(((u8*)this) + index);
-		}
-	}
-	
-	Header header;
-	WorldInfo worldInfo;
-	u32 nodeCount;
-	u32 nodes; // Node**
-	u32 pathCount;
-	u32 paths; // Path**
-
-	Node* nodesPtr;
-	Path* pathsPtr;
+private:
+	MapData() = delete;
 };
 
 class Map {
@@ -128,6 +109,11 @@ public:
 	Map();
 	explicit Map(const std::string& filePath);
 	~Map();
+
+	void AddNode();
+	void AddPath();
+
+	void Save(const std::string& filePath);
 
 	MapData::Header header;
 	MapData::WorldInfo worldInfo;

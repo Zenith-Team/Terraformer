@@ -9,7 +9,6 @@ class Terraformer {
 public:
 	Map* map = nullptr;
 	std::string message = "";
-	bool windowOpen = true;
 
 
 	void Update();
@@ -21,4 +20,5 @@ public:
     void NewFile();
 
 	void ShowMessage();
+    void Exit();
 };
