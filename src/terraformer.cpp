@@ -9,9 +9,11 @@ void Terraformer::Update() {
 	
 	ImGui::BeginMainMenuBar();
 	if (ImGui::BeginMenu("File")) {
-		if (ImGui::MenuItem("Open")) {
+        if (ImGui::MenuItem("New"))
+            this->NewFile();
+		if (ImGui::MenuItem("Open"))
             this->LoadFile("CS_W1.a2ls");
-        }
+        
         ImGui::EndMenu();
     }
 	ImGui::EndMainMenuBar();
@@ -48,16 +50,24 @@ void Terraformer::LoadFile(const std::string& filePath) {
 	}
 }
 
+void Terraformer::NewFile() {
+    if (this->map != nullptr) {
+        delete this->map;
+    }
+
+    this->map = new Map();    
+}
+
 void Terraformer::ShowMessage() {
 	ImGui::OpenPopup("Message");
 
 	if (ImGui::BeginPopupModal("Message", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
-		ImGui::Text(message.c_str());
+		ImGui::Text(this->message.c_str());
 
 		if (ImGui::Button("OK")) {
 			ImGui::CloseCurrentPopup();
-			std::cout << message.c_str() << std::endl;
-			message = "";
+			std::cout << this->message.c_str() << std::endl;
+			this->message = "";
 		}
 
 		ImGui::EndPopup();

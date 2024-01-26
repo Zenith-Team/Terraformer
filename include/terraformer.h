@@ -18,6 +18,7 @@ public:
 	void UIPaths();
 
 	void LoadFile(const std::string& filePath);
+    void NewFile();
 
 	void ShowMessage();
 };

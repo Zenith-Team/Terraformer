@@ -125,7 +125,8 @@ public:
 
 class Map {
 public:
-	Map(const std::string& filePath);
+	Map();
+	explicit Map(const std::string& filePath);
 	~Map();
 
 	MapData::Header header;

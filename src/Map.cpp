@@ -3,6 +3,18 @@
 #include <iostream>
 #include "map.h"
 
+Map::Map()
+	: header(), worldInfo(), nodes(), paths()
+{
+	this->header.magic = MapData::MAGIC;
+	this->header.version = MapData::VERSION;
+	this->header.mapID = 0;
+
+	this->worldInfo.worldID = 0;
+	memcpy(this->worldInfo.name, "New World", 32);
+	this->worldInfo.accentColor = 0;
+}
+
 Map::Map(const std::string& filePath) {
 	std::string buffer;
 
