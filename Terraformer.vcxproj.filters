@@ -95,6 +95,9 @@
     <ClInclude Include="include\map.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\terraformer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="vendor\lib\glfw3.lib" />

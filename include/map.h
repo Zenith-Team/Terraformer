@@ -113,6 +113,9 @@ public:
 	void AddNode();
 	void AddPath();
 
+	void RemoveNode(u32 index);
+	void RemovePath(u32 index);
+
 	void Save(const std::string& filePath);
 
 	MapData::Header header;

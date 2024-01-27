@@ -28,6 +28,8 @@ void Terraformer::Update() {
 	}
 
 	if (ImGui::Begin((std::string{"Terraformer | Editing map: "} + std::string{this->map->worldInfo.name}).c_str())) {
+        this->UIProperties();
+        ImGui::NewLine();
 		this->UINodes();
         ImGui::SameLine();
 		this->UIPaths();
@@ -35,13 +37,36 @@ void Terraformer::Update() {
 }
 
 void Terraformer::UINodes() {
+    ImGui::PushID("nodes");
+    if (ImGui::Button("+", ImVec2(40, 0))) {
+        this->map->AddNode();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("-", ImVec2(40, 0))) {
+        if (this->selectedNode != -1) {
+			this->map->RemoveNode(this->selectedNode);
+			this->selectedNode = -1;
+		}
+	}
+    ImGui::PopID();
+
     ImGui::BeginChild("Nodes", ImVec2(500, 0), true);
     for (u32 i = 0; i < this->map->nodes.size(); i++) {
+        
+
         MapData::Node& node = this->map->nodes[i];
         
-        ImGui::PushID(i);
+        const bool selected = (i == this->selectedNode);
 
-        ImGui::Text("Node %d", i);
+        ImGui::PushID(i);
+        if (ImGui::Selectable((std::string{"Node "} + std::to_string(i)).c_str(), selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
+            if (selectedNode == i) {
+				this->selectedNode = -1;
+            } else {
+				this->selectedNode = i;
+			}
+        }
+
         ImGui::InputText("Bone Name", node.boneName, sizeof(node.boneName));
         ImGui::Combo("Type", (int*)&node.type, "Normal\0Passthrough\0Level\0");
 
@@ -63,18 +88,30 @@ void Terraformer::UINodes() {
 
         ImGui::PopID();
 
-        if (i != this->map->nodes.size() - 1) {
-            ImGui::Separator();
-        }
+        //if (i != this->map->nodes.size() - 1) {
+        //    ImGui::Separator();
+        //}
     }
 
-    if (ImGui::Button("Add Node")) {
-        this->map->AddNode();
-    }
     ImGui::EndChild();
 }
 
 void Terraformer::UIPaths() {
+    ImGui::PushID("paths");
+    if (ImGui::Button("+", ImVec2(40, 0))) {
+        this->map->AddPath();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("-", ImVec2(40, 0))) {
+        if (this->selectedPath != -1) {
+            this->map->RemovePath(this->selectedPath);
+            this->selectedPath = -1;
+        }
+    }
+    ImGui::PopID();
+
+    ImGui::SameLine();
+
     ImGui::BeginChild("Paths", ImVec2(500, 0), true);
 
     static const char* const animationString =
@@ -105,8 +142,19 @@ void Terraformer::UIPaths() {
     for (u32 i = 0; i < this->map->paths.size(); i++) {
         MapData::Path& path = this->map->paths[i];
         
+        const bool selected = (i == this->selectedPath);
+
         ImGui::PushID(i);
-        ImGui::Text("Path %d", i);
+        if (ImGui::Selectable((std::string{ "Path " } + std::to_string(i)).c_str(), selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
+            if (selectedPath == i) {
+                this->selectedPath = -1;
+            }
+            else {
+                this->selectedPath = i;
+            }
+        }
+
+
         ImGui::Combo("Starting Node", (int*)&path.startingNodeIndex, nodeNames.c_str());
         ImGui::Combo("Ending Node", (int*)&path.endingNodeIndex, nodeNames.c_str());
         ImGui::InputFloat("Speed", &path.speed);
@@ -118,10 +166,15 @@ void Terraformer::UIPaths() {
         }
     }
 
-    if (ImGui::Button("Add Path")) {
-        this->map->AddPath();
-    }
     ImGui::EndChild();
+}
+
+void Terraformer::UIProperties() {
+	ImGui::BeginChild("Properties", ImVec2(1010, 200), true);
+    ImGui::InputText("World Name", this->map->worldInfo.name, sizeof(this->map->worldInfo.name));
+    ImGui::InputScalar("World ID", ImGuiDataType_U32, &this->map->worldInfo.worldID);
+    //ImGui::InputScalar("Map ID", ImGuiDataType_S32, &this->map->);
+	ImGui::EndChild();
 }
 
 void Terraformer::LoadFile(const std::string& filePath) {

@@ -131,6 +131,15 @@ void Map::AddPath() {
 	this->paths.push_back(path);
 }
 
+void Map::RemoveNode(u32 index) {
+	this->nodes.erase(this->nodes.begin() + index);
+}
+
+void Map::RemovePath(u32 index) {
+	delete[] this->paths[index].unlockCriteriaData;
+	this->paths.erase(this->paths.begin() + index);
+}
+
 void Map::Save(const std::string& filePath) {
 	std::ofstream file(filePath, std::ios::binary);
 
