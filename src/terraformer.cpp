@@ -88,9 +88,9 @@ void Terraformer::UINodes() {
 
         ImGui::PopID();
 
-        //if (i != this->map->nodes.size() - 1) {
-        //    ImGui::Separator();
-        //}
+        if (i != this->map->nodes.size() - 1) {
+            ImGui::Separator();
+        }
     }
 
     ImGui::EndChild();
